@@ -18,7 +18,23 @@ endfunction
 // Multiplication by repeated addition
 function Bit#(TAdd#(n,n)) multiply_by_adding( Bit#(n) a, Bit#(n) b );
     // TODO: Implement this function in Exercise 2
-    return 0;
+    // First solution
+    // Bit#(TAdd#(n,n)) ans = 0; 
+    // for(Integer i = 0; i < valueOf(n); i = i + 1) begin
+    //     if(a[i] == 1) begin
+    //         ans = ans + (zeroExtend(b) << i);
+    //     end
+    // end 
+    // return ans;
+    // Another solution according to the 6.175 ppt
+    Bit#(n) tp = 0; Bit#(n) prod = 0;
+    for(Integer i = 0; i < valueOf(n); i = i + 1) begin
+        Bit#(n) m = (a[i] == 0) ? 0 : b;
+        Bit#(TAdd#(n,1)) sum = zeroExtend(tp) + zeroExtend(m);
+        prod[i] = sum[0];
+        tp = sum[valueOf(n):1];
+    end 
+    return {tp, prod};
 endfunction
 
 
@@ -42,27 +58,43 @@ module mkFoldedMultiplier( Multiplier#(n) );
     Reg#(Bit#(n)) tp <- mkRegU();
     Reg#(Bit#(TAdd#(TLog#(n),1))) i <- mkReg( fromInteger(valueOf(n)+1) );
 
-    rule mulStep( /* guard goes here */ );
+    rule mulStep( i < fromInteger(valueOf(n)) );
         // TODO: Implement this in Exercise 4
+        Bit#(n) m = (a[i] == 0) ? 0 : b;
+        Bit#(TAdd#(n,1)) sum = zeroExtend(tp) + zeroExtend(m);
+        prod[i] <= sum[0];
+        tp <= sum[valueOf(n):1];
+        i <= i + 1;
     endrule
 
     method Bool start_ready();
         // TODO: Implement this in Exercise 4
-        return False;
+        Bool ready = (i == fromInteger(valueOf(n)+1)) ? True : False;
+        return ready;
     endmethod
 
     method Action start( Bit#(n) aIn, Bit#(n) bIn );
         // TODO: Implement this in Exercise 4
+        if( i == fromInteger(valueOf(n)+1)) begin  // Only having conducted .result method can let i == n + 1
+            a <= aIn; b <= bIn;
+            prod <= 0; tp <= 0; i <= 0;
+        end
     endmethod
 
     method Bool result_ready();
         // TODO: Implement this in Exercise 4
-        return False;
+        Bool ready = (i == fromInteger(valueOf(n))) ? True : False;
+        return ready;
     endmethod
 
     method ActionValue#(Bit#(TAdd#(n,n))) result();
         // TODO: Implement this in Exercise 4
-        return 0;
+        if(i == fromInteger(valueOf(n))) begin
+            i <= i + 1;
+            return {tp, prod};
+        end else begin
+            return 0;
+        end
     endmethod
 endmodule
 
@@ -75,9 +107,9 @@ module mkBoothMultiplier( Multiplier#(n) );
     Reg#(Bit#(TAdd#(TAdd#(n,n),1))) p <- mkRegU;
     Reg#(Bit#(TAdd#(TLog#(n),1))) i <- mkReg( fromInteger(valueOf(n)+1) );
 
-    rule mul_step( /* guard goes here */ );
-        // TODO: Implement this in Exercise 6
-    endrule
+    // rule mul_step( /* guard goes here */ );
+    //     // TODO: Implement this in Exercise 6
+    // endrule
 
     method Bool start_ready();
         // TODO: Implement this in Exercise 6
@@ -108,9 +140,9 @@ module mkBoothMultiplierRadix4( Multiplier#(n) );
     Reg#(Bit#(TAdd#(TAdd#(n,n),2))) p <- mkRegU;
     Reg#(Bit#(TAdd#(TLog#(n),1))) i <- mkReg( fromInteger(valueOf(n)/2+1) );
 
-    rule mul_step( /* guard goes here */ );
-        // TODO: Implement this in Exercise 8
-    endrule
+    // rule mul_step( /* guard goes here */ );
+    //     // TODO: Implement this in Exercise 8
+    // endrule
 
     method Bool start_ready();
         // TODO: Implement this in Exercise 8
