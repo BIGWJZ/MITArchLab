@@ -1,0 +1,4 @@
+Username: akashk16
+Grade: 90%
+Comments: Your conflict matrix is missing "<" (schedule before) and ">" (schedule after) conflicts.
+Also, your clear method in the CF Fifo is missing the constraint that forces "clear > {enq, deq}"

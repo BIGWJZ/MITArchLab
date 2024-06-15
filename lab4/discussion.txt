@@ -1,0 +1,56 @@
+1. What registers are read from and written to in each of the interface
+    methods of mkMyConflictFifo?
+
+notEmpty
+    read: empty
+    written:
+first
+    read: empty, deqP, data
+    written:
+deq
+    read: empty, enqP, deqP
+    written: empty, full, deqP
+notFull
+    read: full
+    written:
+enq
+    read: full, enqP, deqP
+    written: data, empty, full, enqP
+clear
+    read:
+    written: enqP, deqP, empty, full
+
+
+
+2. Fill the conflict Matrix for mkMyConflictFifo.
+
+           notEmpty   first   deq   notFull   enq   clear
+         +----------+-------+-----+---------+-----+-------+
+notEmpty |    CF    |   CF  |  CF |    CF   |  CF |   CF  |
+         +----------+-------+-----+---------+-----+-------+
+first    |    CF    |   CF  |  CF |    CF   |  CF |   CF  |
+         +----------+-------+-----+---------+-----+-------+
+deq      |    CF    |   CF  |  C  |    CF   |  C  |   C   |
+         +----------+-------+-----+---------+-----+-------+
+notFull  |    CF    |   CF  |  CF |    CF   |  CF |   CF  |
+         +----------+-------+-----+---------+-----+-------+
+enq      |    CF    |   CF  |  C  |    CF   |  C  |   C   |
+         +----------+-------+-----+---------+-----+-------+
+clear    |    CF    |   CF  |  C  |    CF   |  C  |   C   |
+         +----------+-------+-----+---------+-----+-------+
+
+
+
+3. Which conflicts from mkMyConflictFifo do not match the conflict-free FIFO
+    scheduling constraints?
+
+enq C deq --> enq CF deq
+{enq, deq} C clear --> {enq, deq} < clear
+
+
+
+4. In your design of the clear method in mkMyCFFifo, how did you force the
+    scheduling constraint {enq, deq} < clear?
+
+In the canonicalize rule, the FIFO checks to see if the clear EHR is set to true. If so, it clears the FIFO and does not process enq or deq. If the clear EHR is not set to true, then the FIFO continues to process enq and deq accordingly.
+
