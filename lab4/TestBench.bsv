@@ -32,7 +32,7 @@ endmodule
 (* synthesize *)
 module mkTbCFFunctional();
     Fifo#(3, Bit#(8)) fifo <- mkMyCFFifo();
-    Bool has_clear = True;
+    Bool has_clear = False;
     let m <- mkTbFunctionalTemplate( fifo, CF, has_clear );
 endmodule
 
@@ -71,6 +71,6 @@ endmodule
 
 (* synthesize *)
 module mkTbCFScheduling();
-    Bool has_clear = True;
+    Bool has_clear = False;
     let m <- mkTbSchedulingTemplate( mkMyCFFifo, CF, has_clear );
 endmodule

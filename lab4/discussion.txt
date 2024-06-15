@@ -2,23 +2,23 @@
     methods of mkMyConflictFifo?
 
 notEmpty
-    read: empty
+    read:
     written:
 first
-    read: empty, deqP, data
+    read:
     written:
 deq
-    read: empty, enqP, deqP
-    written: empty, full, deqP
+    read:
+    written:
 notFull
-    read: full
+    read:
     written:
 enq
-    read: full, enqP, deqP
-    written: data, empty, full, enqP
+    read:
+    written:
 clear
     read:
-    written: enqP, deqP, empty, full
+    written:
 
 
 
@@ -26,17 +26,17 @@ clear
 
            notEmpty   first   deq   notFull   enq   clear
          +----------+-------+-----+---------+-----+-------+
-notEmpty |    CF    |   CF  |  CF |    CF   |  CF |   CF  |
+notEmpty |          |       |     |         |     |       |
          +----------+-------+-----+---------+-----+-------+
-first    |    CF    |   CF  |  CF |    CF   |  CF |   CF  |
+first    |          |       |     |         |     |       |
          +----------+-------+-----+---------+-----+-------+
-deq      |    CF    |   CF  |  C  |    CF   |  C  |   C   |
+deq      |          |       |     |         |     |       |
          +----------+-------+-----+---------+-----+-------+
-notFull  |    CF    |   CF  |  CF |    CF   |  CF |   CF  |
+notFull  |          |       |     |         |     |       |
          +----------+-------+-----+---------+-----+-------+
-enq      |    CF    |   CF  |  C  |    CF   |  C  |   C   |
+enq      |          |       |     |         |     |       |
          +----------+-------+-----+---------+-----+-------+
-clear    |    CF    |   CF  |  C  |    CF   |  C  |   C   |
+clear    |          |       |     |         |     |       |
          +----------+-------+-----+---------+-----+-------+
 
 
@@ -44,13 +44,10 @@ clear    |    CF    |   CF  |  C  |    CF   |  C  |   C   |
 3. Which conflicts from mkMyConflictFifo do not match the conflict-free FIFO
     scheduling constraints?
 
-enq C deq --> enq CF deq
-{enq, deq} C clear --> {enq, deq} < clear
-
 
 
 4. In your design of the clear method in mkMyCFFifo, how did you force the
     scheduling constraint {enq, deq} < clear?
 
-In the canonicalize rule, the FIFO checks to see if the clear EHR is set to true. If so, it clears the FIFO and does not process enq or deq. If the clear EHR is not set to true, then the FIFO continues to process enq and deq accordingly.
+
 
