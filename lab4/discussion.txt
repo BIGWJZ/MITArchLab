@@ -2,23 +2,23 @@
     methods of mkMyConflictFifo?
 
 notEmpty
-    read:
+    read: empty
     written:
 first
-    read:
+    read: data, empty, deqP
     written:
 deq
-    read:
-    written:
+    read: empty, enqP, deqP
+    written: empty, deqP, full
 notFull
-    read:
+    read: full
     written:
 enq
-    read:
-    written:
+    read: full, enqP, deqP
+    written: empty, full, enqP, data
 clear
     read:
-    written:
+    written: enqP, deqP, empty, full
 
 
 
@@ -26,17 +26,17 @@ clear
 
            notEmpty   first   deq   notFull   enq   clear
          +----------+-------+-----+---------+-----+-------+
-notEmpty |          |       |     |         |     |       |
+notEmpty |   CF     |  CF   | CF  |   CF    | CF  |  CF   |
          +----------+-------+-----+---------+-----+-------+
-first    |          |       |     |         |     |       |
+first    |   CF     |  CF   | CF  |   CF    | CF  |  CF   |
          +----------+-------+-----+---------+-----+-------+
-deq      |          |       |     |         |     |       |
+deq      |   CF     |  CF   | C   |   CF    | C   |  C    |
          +----------+-------+-----+---------+-----+-------+
-notFull  |          |       |     |         |     |       |
+notFull  |   CF     |  CF   | CF  |   CF    | CF  |  CF   |
          +----------+-------+-----+---------+-----+-------+
-enq      |          |       |     |         |     |       |
+enq      |   CF     |  CF   | C   |   CF    | C   |  C    |
          +----------+-------+-----+---------+-----+-------+
-clear    |          |       |     |         |     |       |
+clear    |   CF     |  CF   | C   |   CF    | C   |  C    |
          +----------+-------+-----+---------+-----+-------+
 
 
