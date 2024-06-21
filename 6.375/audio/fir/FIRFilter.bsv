@@ -1,17 +1,39 @@
 
 import FIFO::*;
+import FixedPoint::*;
+import Vector::*;
+import Multiplier::*;
 
 import AudioProcessorTypes::*;
+import FilterCoefficients::*;
 
 module mkFIRFilter (AudioProcessor);
 
     FIFO#(Sample) infifo <- mkFIFO();
     FIFO#(Sample) outfifo <- mkFIFO();
+    Vector#(8, Reg#(Sample)) r <- replicateM(mkReg(0));
+    Vector#(9, Multiplier) mul <- replicateM(mkMultiplier());
 
     rule process (True);
-        $display("got sample: %h", infifo.first());
+        Sample sample = infifo.first();
         infifo.deq();
-        outfifo.enq(infifo.first());
+        r[0] <= sample;
+        mul[0].putOperands(c[0], sample);
+        for(Integer i = 0; i < 7; i = i + 1) begin
+            r[i+1] <= r[i];
+        end 
+        for(Integer i = 0; i < 8; i = i + 1) begin
+            mul[i+1].putOperands(c[i+1], r[i]);
+        end
+    endrule
+
+    rule getMulResult (True);
+        FixedPoint#(16,16) accumulate = 0;
+        for(Integer i = 0; i < 9; i = i + 1) begin
+            let mulResult <- mul[i].getResult;
+            accumulate = accumulate + mulResult;
+        end
+        outfifo.enq(fxptGetInt(accumulate));
     endrule
 
     method Action putSampleInput(Sample in);
