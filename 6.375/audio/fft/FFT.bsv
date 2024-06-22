@@ -2,6 +2,7 @@
 import ClientServer::*;
 import Complex::*;
 import FIFO::*;
+import FIFOF::*;
 import Reg6375::*;
 import GetPut::*;
 import Real::*;
@@ -130,10 +131,81 @@ module mkCombinationalFFT (FFT);
 
 endmodule
 
+// Shorten the critical path of the original combination FFT by asserting registers
+module mkLinearFFT (FFT);
+    TwiddleTable twiddles = genTwiddles();
+    FIFOF#(Vector#(FFT_POINTS, ComplexSample)) inputFIFO  <- mkFIFOF(); 
+    FIFOF#(Vector#(FFT_POINTS, ComplexSample)) outputFIFO <- mkFIFOF(); 
+    Vector#(FFT_LOG_POINTS, Reg#(Maybe#(Vector#(FFT_POINTS, ComplexSample)))) stage_data <- replicateM(mkReg(tagged Invalid));
+    let stage_num = valueOf(FFT_LOG_POINTS);
+
+    function Vector#(FFT_POINTS, ComplexSample) stage_f(Bit#(TLog#(FFT_LOG_POINTS)) stage, Vector#(FFT_POINTS, ComplexSample) stage_in);
+        return stage_ft(twiddles, stage, stage_in);
+    endfunction
+
+    rule linear_fft (True);
+        if(inputFIFO.notEmpty()) begin
+            stage_data[0] <= tagged Valid stage_f(0, inputFIFO.first);
+            inputFIFO.deq();
+        end else begin
+            stage_data[0] <= tagged Invalid;
+        end
+        for(Integer stage = 1; stage < stage_num; stage=stage+1) begin 
+            if(isValid(stage_data[stage-1])) begin 
+                let s_data = fromMaybe(?, stage_data[stage-1]);
+                stage_data[stage] <= tagged Valid stage_f(fromInteger(stage),s_data); 
+            end else begin stage_data[stage] <= tagged Invalid; end
+        end
+        if(isValid(stage_data[stage_num-1])) begin
+            outputFIFO.enq(fromMaybe(?, stage_data[stage_num-1])); end
+    endrule
+
+    interface Put request;
+        method Action put(Vector#(FFT_POINTS, ComplexSample) x);
+            inputFIFO.enq(bitReverse(x));
+        endmethod
+    endinterface
+    
+    interface Get response = toGet(outputFIFO);
+
+endmodule
+
+
+module mkCircularFFT (FFT);
+    TwiddleTable twiddles = genTwiddles();
+    FIFO#(Vector#(FFT_POINTS, ComplexSample)) inputFIFO  <- mkFIFO(); 
+    FIFO#(Vector#(FFT_POINTS, ComplexSample)) outputFIFO <- mkFIFO(); 
+    Reg#(Vector#(FFT_POINTS, ComplexSample)) stage_data <- mkRegU;
+    Reg#(Bit#((TLog#(FFT_LOG_POINTS)))) stage_idx <- mkReg(0);
+
+    function Vector#(FFT_POINTS, ComplexSample) stage_f(Bit#(TLog#(FFT_LOG_POINTS)) stage, Vector#(FFT_POINTS, ComplexSample) stage_in);
+        return stage_ft(twiddles, stage, stage_in);
+    endfunction
+
+    rule circular;
+        let sxIn = ?; 
+        if(stage_idx == 0) begin sxIn = inputFIFO.first; inputFIFO.deq; end
+        else begin sxIn = stage_data; end
+        let sxOut = stage_f(stage_idx, sxIn);
+        if(stage_idx == fromInteger(valueOf(FFT_LOG_POINTS)-1)) begin outputFIFO.enq(sxOut);  end
+        else begin stage_data <= sxOut; end
+        stage_idx <= (stage_idx == fromInteger(valueOf(FFT_LOG_POINTS)-1)) ? 0 : stage_idx+1;
+    endrule
+
+    interface Put request;
+        method Action put(Vector#(FFT_POINTS, ComplexSample) x);
+            inputFIFO.enq(bitReverse(x));
+        endmethod
+    endinterface
+    
+    interface Get response = toGet(outputFIFO);
+endmodule
+
 // Wrapper around The FFT module we actually want to use
 module mkFFT (FFT);
-    FFT fft <- mkCombinationalFFT();
-    
+    // FFT fft <- mkCombinationalFFT();
+    // FFT fft <- mkLinearFFT();
+    FFT fft <- mkCircularFFT();
     interface Put request = fft.request;
     interface Get response = fft.response;
 endmodule
