@@ -7,29 +7,29 @@ import Multiplier::*;
 import AudioProcessorTypes::*;
 import FilterCoefficients::*;
 
-module mkFIRFilter (Vector#(9, FixedPoint#(16, 16)) coeffs, AudioProcessor ifc);
+module mkFIRFilter (Vector#(clength, FixedPoint#(16, 16)) coeffs, AudioProcessor ifc);
 
     FIFO#(Sample) infifo <- mkFIFO();
     FIFO#(Sample) outfifo <- mkFIFO();
-    Vector#(8, Reg#(Sample)) r <- replicateM(mkReg(0));
-    Vector#(9, Multiplier) mul <- replicateM(mkMultiplier());
+    Vector#(TSub#(clength,1), Reg#(Sample)) r <- replicateM(mkReg(0));
+    Vector#(clength, Multiplier) mul <- replicateM(mkMultiplier());
 
     rule process (True);
         Sample sample = infifo.first();
         infifo.deq();
         r[0] <= sample;
         mul[0].putOperands(coeffs[0], sample);
-        for(Integer i = 0; i < 7; i = i + 1) begin
+        for(Integer i = 0; i < valueOf(clength)-2; i = i + 1) begin
             r[i+1] <= r[i];
         end 
-        for(Integer i = 0; i < 8; i = i + 1) begin
+        for(Integer i = 0; i < valueOf(clength)-1; i = i + 1) begin
             mul[i+1].putOperands(coeffs[i+1], r[i]);
         end
     endrule
 
     rule getMulResult (True);
         FixedPoint#(16,16) accumulate = 0;
-        for(Integer i = 0; i < 9; i = i + 1) begin
+        for(Integer i = 0; i < valueOf(clength); i = i + 1) begin
             let mulResult <- mul[i].getResult;
             accumulate = accumulate + mulResult;
         end
