@@ -7,7 +7,7 @@ import Multiplier::*;
 import AudioProcessorTypes::*;
 import FilterCoefficients::*;
 
-module mkFIRFilter (AudioProcessor);
+module mkFIRFilter (Vector#(9, FixedPoint#(16, 16)) coeffs, AudioProcessor ifc);
 
     FIFO#(Sample) infifo <- mkFIFO();
     FIFO#(Sample) outfifo <- mkFIFO();
@@ -18,12 +18,12 @@ module mkFIRFilter (AudioProcessor);
         Sample sample = infifo.first();
         infifo.deq();
         r[0] <= sample;
-        mul[0].putOperands(c[0], sample);
+        mul[0].putOperands(coeffs[0], sample);
         for(Integer i = 0; i < 7; i = i + 1) begin
             r[i+1] <= r[i];
         end 
         for(Integer i = 0; i < 8; i = i + 1) begin
-            mul[i+1].putOperands(c[i+1], r[i]);
+            mul[i+1].putOperands(coeffs[i+1], r[i]);
         end
     endrule
 
@@ -44,6 +44,7 @@ module mkFIRFilter (AudioProcessor);
         outfifo.deq();
         return outfifo.first();
     endmethod
+endmodule
 
 module mkFIRFilterUnstatic (AudioProcessor);
 
