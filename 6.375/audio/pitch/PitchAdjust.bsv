@@ -2,11 +2,13 @@
 import ClientServer::*;
 import FIFO::*;
 import GetPut::*;
+import Complex::*;
 
 import FixedPoint::*;
 import Vector::*;
 
 import ComplexMP::*;
+import Cordic::*;
 
 
 typedef Server#(
@@ -57,8 +59,8 @@ module mkPitchAdjust(Integer s, FixedPoint#(isize, fsize) factor, PitchAdjust#(n
                 let bin_idx = fromMaybe(?, bins_idx[i]);
                 outphases[bin_idx] <= outphases[bin_idx] + shifted;
                 outdata[bin_idx] = cmplxmp(indata[i].magnitude, (outphases[bin_idx] + shifted));
-                $display("idx:%d, inPhase:%d, dPhase:%d, shifted:%d, outPhase:%d", 
-                            bin_idx, indata[i].phase, dphase, shifted, outdata[bin_idx].phase);
+                // $display("idx:%d, inPhase:%d, dPhase:%d, shifted:%d, outPhase:%d", 
+                //             bin_idx, indata[i].phase, dphase, shifted, outdata[bin_idx].phase);
             end
         end
         outputFIFO.enq(outdata);
@@ -68,3 +70,62 @@ module mkPitchAdjust(Integer s, FixedPoint#(isize, fsize) factor, PitchAdjust#(n
     interface Get response = toGet(outputFIFO);
 endmodule
 
+typedef Server#(
+    Vector#(nbins, Complex#(FixedPoint#(isize, fsize))),
+    Vector#(nbins, ComplexMP#(isize, fsize, psize))
+)ToMP#(numeric type nbins, numeric type isize, numeric type fsize, numeric type psize);
+
+typedef Server#(
+    Vector#(nbins, ComplexMP#(isize, fsize, psize)),
+    Vector#(nbins, Complex#(FixedPoint#(isize, fsize)))
+)FromMP#(numeric type nbins, numeric type isize, numeric type fsize, numeric type psize);
+
+module mkToMP(ToMP#(nbins, isize, fsize, psize)) provisos(Min#(isize, 1, 1), Min#(TAdd#(isize, fsize), 2, 2));
+
+    Vector#(nbins, ToMagnitudePhase#(isize, fsize, psize)) tomps <- replicateM(mkCordicToMagnitudePhase());
+
+    interface Put request;
+        method Action put(Vector#(nbins, Complex#(FixedPoint#(isize, fsize))) indata);
+            for(Integer i = 0; i < valueOf(nbins); i = i + 1) begin
+                tomps[i].request.put(indata[i]);
+            end
+        endmethod
+    endinterface
+
+    interface Get response;
+        method ActionValue#(Vector#(nbins, ComplexMP#(isize, fsize, psize)))  get();
+            Vector#(nbins, ComplexMP#(isize, fsize, psize)) ans = newVector();
+            for(Integer i = 0; i < valueOf(nbins); i = i + 1) begin
+                let mpans <- tomps[i].response.get();
+                ans[i] = mpans;
+            end
+            return ans;
+        endmethod
+    endinterface
+
+endmodule
+
+module mkFromMP(FromMP#(nbins, isize, fsize, psize)) provisos(Min#(isize, 1, 1), Min#(TAdd#(isize, fsize), 2, 2));
+
+    Vector#(nbins, FromMagnitudePhase#(isize, fsize, psize)) frommps <- replicateM(mkCordicFromMagnitudePhase());
+
+    interface Put request;
+        method Action put(Vector#(nbins, ComplexMP#(isize, fsize, psize)) indata);
+            for(Integer i = 0; i < valueOf(nbins); i = i + 1) begin
+                frommps[i].request.put(indata[i]);
+            end
+        endmethod
+    endinterface
+
+    interface Get response;
+        method ActionValue#(Vector#(nbins, Complex#(FixedPoint#(isize, fsize))))  get();
+            Vector#(nbins, Complex#(FixedPoint#(isize, fsize))) ans = newVector();
+            for(Integer i = 0; i < valueOf(nbins); i = i + 1) begin
+                let mpans <- frommps[i].response.get();
+                ans[i] = mpans;
+            end
+            return ans;
+        endmethod
+    endinterface
+
+endmodule

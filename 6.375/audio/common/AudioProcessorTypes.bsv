@@ -28,5 +28,6 @@ endfunction
 
 
 typedef 8 FFT_POINTS;
+typedef 2 S;
 typedef TLog#(FFT_POINTS) FFT_LOG_POINTS;
 
