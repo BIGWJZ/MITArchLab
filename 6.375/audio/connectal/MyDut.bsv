@@ -1,6 +1,7 @@
 `include "ConnectalProjectConfig.bsv"
 import FIFO::*;
 import Vector::*;
+import FixedPoint::*;
 import DefaultValue::*;
 import ClientServer::*;
 import GetPut::*;
@@ -15,6 +16,7 @@ interface MyDutRequest;
     // Bit#(n) is the only supported argument type for request methods
     method Action putSampleInput (Bit#(16) in);
     method Action reset_dut();
+    method Action setFactor (Bit#(32) factorPkt);
 endinterface
 
 // interface used by hardware to send a message back to software
@@ -41,7 +43,8 @@ module mkMyDut#(MyDutIndication indication) (MyDut);
     endrule
 
     // Your design
-    AudioProcessor ap <- mkAudioPipeline(reset_by my_rst.new_rst);
+    SettableAudioProcessor#(16,16) sap <- mkAudioPipeline(reset_by my_rst.new_rst);
+    AudioProcessor ap = sap.audioProc;
 
     // Send a message back to sofware whenever the response is ready
     rule indicationToSoftware;
@@ -62,6 +65,11 @@ module mkMyDut#(MyDutIndication indication) (MyDut);
         method Action reset_dut;
             my_rst.assertReset; // assert my_rst.new_rst signal
             isResetting <= True;
+        endmethod
+
+        method Action setFactor (Bit#(32) factorPkt) if (!isResetting);
+            FixedPoint#(16,16) f = unpack(factorPkt);
+            sap.setFactor.put(f);
         endmethod
     endinterface
 endmodule
