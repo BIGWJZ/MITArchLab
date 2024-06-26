@@ -8,8 +8,8 @@ src = PitchAdjust.bsv PitchAdjustTest.bsv $(wildcard ../common/*.bsv) $(wildcard
 
 PitchAdjust: PitchAdjust.bsv PitchAdjustTest.bsv
 	mkdir -p bscdir
-	bsc -u -sim -simdir $(build_dir) -bdir $(build_dir) -info-dir $(build_dir) $(bscflags) -p +:$(bsvdir) -g mkPitchAdjustTest PitchAdjustTest.bsv
-	bsc -e mkPitchAdjustTest -sim -o $@ -simdir $(build_dir) -bdir $(build_dir) -info-dir $(build_dir) $(bscflags)	
+	bsc -u -sim -simdir $(build_dir) -bdir $(build_dir) -info-dir $(build_dir) $(bscflags) -p +:$(bsvdir) -g  mkPitchAdjustTest PitchAdjustTest.bsv
+	bsc -e mkPitchAdjustTest -sim -o $@ -simdir $(build_dir) -bdir $(build_dir) -info-dir $(build_dir) $(bscflags) 
 AudioPipeline: $(src)
 	mkdir -p bscdir
 	bsc -u -sim -simdir $(build_dir) -bdir $(build_dir) -info-dir $(build_dir) $(bscflags) -p +:$(bsvdir) -g mkTestDriver ../common/TestDriver.bsv
