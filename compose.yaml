@@ -1,0 +1,10 @@
+services: 
+  connectal: 
+    image: kazutoiris/connectal:latest 
+    command: /bin/bash 
+    tty: true 
+    stdin_open: true
+    user: root
+    volumes:
+      - .:/root
+    network_mode: none 
