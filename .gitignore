@@ -8,6 +8,6 @@
 !*.bsv
 !*.txt
 !/6.375/audio/connectal/connectal_test.cpp
-!/6.175/lab5/*.c ,!/6.175/lab5/*.h, !/6.175/lab5/*.cpp ,!/6.175/lab5/*.S, !/6.175/lab5/*.pl, !/6.175/lab5/ldscript, 
+!/6.175/lab5/**/*.c ,!/6.175/lab5/**/*.h, !/6.175/lab5/**/*.cpp ,!/6.175/lab5/**/*.S, !/6.175/lab5/**/*.pl, !/6.175/lab5/**/ldscript, 
 !/6.375/audio/data/*.pcm
 !Makefile
